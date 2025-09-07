@@ -210,6 +210,16 @@ const Editor = () => {
                       <SpotEditor 
                         image={currentImage}
                         onSpotEdit={generateSpotEdit}
+                        onApplyEdit={(imageUrl, prompt) => {
+                          // Apply the spot edit to the current image
+                          selectImage({
+                            id: Date.now(),
+                            url: imageUrl,
+                            isGenerated: true,
+                            prompt: prompt || 'Spot edit',
+                            timestamp: new Date().toISOString()
+                          })
+                        }}
                         isLoading={isLoading}
                       />
                     )}
