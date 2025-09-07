@@ -51,7 +51,7 @@ const Editor = () => {
       <header className="header">
         <div className="container">
           <Link to="/" className="logo">
-            <h1>🏠 HomeCanvas</h1>
+            <h1>🧠 DesignMind</h1>
           </Link>
           
           <nav className="nav">
@@ -207,21 +207,11 @@ const Editor = () => {
                     )}
                     
                     {activeTab === 'spot' && (
-                      <SpotEditor 
-                        image={currentImage}
-                        onSpotEdit={generateSpotEdit}
-                        onApplyEdit={(imageUrl, prompt) => {
-                          // Only apply when user clicks "Apply Changes" button
-                          selectImage({
-                            id: Date.now(),
-                            url: imageUrl,
-                            isGenerated: true,
-                            prompt: prompt || 'Spot edit',
-                            timestamp: new Date().toISOString()
-                          })
-                        }}
-                        isLoading={isLoading}
-                      />
+                      <div className="coming-soon">
+                        <div className="coming-soon-icon">🚧</div>
+                        <h3>Coming Soon</h3>
+                        <p>Spot Edit Mode is under development</p>
+                      </div>
                     )}
                   </div>
                 )}
@@ -566,6 +556,28 @@ const Editor = () => {
             padding: 1rem;
             min-height: 60px;
           }
+
+        .coming-soon {
+          text-align: center;
+          padding: 3rem 2rem;
+          background: var(--neutral-50);
+          border-radius: 0.75rem;
+          color: var(--neutral-600);
+        }
+
+        .coming-soon-icon {
+          font-size: 3rem;
+          margin-bottom: 1rem;
+        }
+
+        .coming-soon h3 {
+          color: var(--neutral-700);
+          margin-bottom: 0.5rem;
+        }
+
+        .coming-soon p {
+          font-size: 0.9rem;
+        }
 
         @media (max-width: 768px) {
           .header .container {
