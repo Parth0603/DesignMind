@@ -211,7 +211,7 @@ const Editor = () => {
                         image={currentImage}
                         onSpotEdit={generateSpotEdit}
                         onApplyEdit={(imageUrl, prompt) => {
-                          // Apply the spot edit to the current image
+                          // Only apply when user clicks "Apply Changes" button
                           selectImage({
                             id: Date.now(),
                             url: imageUrl,
