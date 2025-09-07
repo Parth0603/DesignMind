@@ -1,4 +1,4 @@
-# HomeCanvas Backend Deployment Guide
+# DesignMind Backend Deployment Guide
 
 ## Pre-Deployment Checklist
 

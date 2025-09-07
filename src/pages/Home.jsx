@@ -14,7 +14,7 @@ const Home = () => {
       <header className="header">
         <div className="container">
           <div className="logo">
-            <h1>🏠 HomeCanvas</h1>
+            <h1>🧠 DesignMind</h1>
           </div>
         </div>
       </header>
@@ -23,9 +23,9 @@ const Home = () => {
         <div className="container">
           <section className="hero">
             <div className="hero-content">
-              <h1 className="hero-title">Your AI Interior Designer</h1>
+              <h1 className="hero-title">DesignMind</h1>
               <p className="hero-subtitle">
-                Stop guessing, start visualizing. Transform your space with AI-powered design suggestions.
+                AI-powered interior design. Transform your space with intelligent design suggestions.
               </p>
               
               <div className="process-steps">

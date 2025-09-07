@@ -1,7 +1,7 @@
 {
-  "name": "homecanvas-backend",
+  "name": "designmind-backend",
   "version": "1.0.0",
-  "description": "Backend API for HomeCanvas AI Interior Designer",
+  "description": "Backend API for DesignMind - AI-powered interior design",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
@@ -24,6 +24,6 @@
     "jest": "^29.7.0"
   },
   "keywords": ["ai", "interior-design", "api", "express"],
-  "author": "HomeCanvas Team",
+  "author": "DesignMind Team",
   "license": "MIT"
 }

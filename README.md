@@ -1,6 +1,6 @@
-# HomeCanvas - AI Interior Designer
+# DesignMind - AI-powered interior design
 
-**Tagline:** "Your AI Interior Designer. Stop guessing, start visualizing."
+**Tagline:** "AI-powered interior design"
 
 A modern React web application that allows users to upload room photos and use natural language to describe interior design changes they want to make.
 
@@ -33,7 +33,7 @@ A modern React web application that allows users to upload room photos and use n
 1. Clone the repository:
 ```bash
 git clone <repository-url>
-cd homecanvas
+cd designmind
 ```
 
 2. Install dependencies:
