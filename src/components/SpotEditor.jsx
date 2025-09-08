@@ -8,6 +8,32 @@ const SpotEditor = ({ image, onSpotEdit, onApplyEdit, isLoading, className = '' 
   const [previewImage, setPreviewImage] = useState(null)
   const imageRef = useRef(null)
   const [imageLoaded, setImageLoaded] = useState(false)
+  const [isEditMode, setIsEditMode] = useState(false)
+
+  // Reset state when modal opens
+  useEffect(() => {
+    if (showModal) {
+      setEditZones([])
+      setActiveZone(null)
+      setPreviewImage(null)
+    }
+  }, [showModal])
+
+  // Global keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (showModal) {
+        if (e.key === 'Escape') {
+          setShowModal(false)
+        }
+      }
+    }
+
+    if (showModal) {
+      document.addEventListener('keydown', handleKeyDown)
+      return () => document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [showModal])
 
   const handleImageClick = (e) => {
     if (!imageRef.current) return
@@ -15,6 +41,15 @@ const SpotEditor = ({ image, onSpotEdit, onApplyEdit, isLoading, className = '' 
     const rect = imageRef.current.getBoundingClientRect()
     const x = ((e.clientX - rect.left) / rect.width) * 100
     const y = ((e.clientY - rect.top) / rect.height) * 100
+
+    // Create ripple effect at click position
+    const ripple = document.createElement('div')
+    ripple.className = 'click-ripple'
+    ripple.style.left = `${e.clientX - rect.left}px`
+    ripple.style.top = `${e.clientY - rect.top}px`
+    imageRef.current.parentElement.appendChild(ripple)
+    
+    setTimeout(() => ripple.remove(), 600)
 
     const newZone = {
       id: Date.now(),
@@ -39,8 +74,10 @@ const SpotEditor = ({ image, onSpotEdit, onApplyEdit, isLoading, className = '' 
     ))
 
     try {
-      // Use current preview image as base, or original image if no preview yet
-      const baseImage = previewImage || image.url
+      let baseImage = previewImage || image.url
+      if (baseImage.startsWith('data:')) {
+        baseImage = baseImage.split(',')[1]
+      }
       
       const result = await onSpotEdit({
         coordinates: { x: zone.x, y: zone.y },
@@ -49,22 +86,17 @@ const SpotEditor = ({ image, onSpotEdit, onApplyEdit, isLoading, className = '' 
         baseImage
       })
       
-      console.log('Spot edit result:', result)
-      
       if (result && result.imageUrl) {
-        console.log('Updating preview image with accumulated changes')
         setPreviewImage(result.imageUrl)
         setEditZones(prev => prev.map(z => 
           z.id === zoneId ? { ...z, status: 'completed', prompt } : z
         ))
       } else {
-        console.log('No image URL in result')
         setEditZones(prev => prev.map(z => 
           z.id === zoneId ? { ...z, status: 'error' } : z
         ))
       }
     } catch (error) {
-      console.error('Spot edit error:', error)
       setEditZones(prev => prev.map(z => 
         z.id === zoneId ? { ...z, status: 'error' } : z
       ))
@@ -73,10 +105,14 @@ const SpotEditor = ({ image, onSpotEdit, onApplyEdit, isLoading, className = '' 
     setActiveZone(null)
   }
 
-  const applyChanges = () => {
+  const applyChangesToMainImage = () => {
     if (previewImage && onApplyEdit) {
-      const lastCompletedZone = editZones.find(z => z.status === 'completed')
-      onApplyEdit(previewImage, lastCompletedZone?.prompt || 'Spot edit')
+      const completedZones = editZones.filter(z => z.status === 'completed')
+      const promptSummary = completedZones.length > 1 
+        ? `Multiple spot edits (${completedZones.length} areas)` 
+        : completedZones[0]?.prompt || 'Spot edit'
+      
+      onApplyEdit(previewImage, promptSummary)
       setShowModal(false)
       setEditZones([])
       setPreviewImage(null)
@@ -115,9 +151,14 @@ const SpotEditor = ({ image, onSpotEdit, onApplyEdit, isLoading, className = '' 
               <div className="modal-controls">
                 {editZones.length > 0 && (
                   <>
-                    <span className="zone-counter">{editZones.length} zones</span>
+                    <span className="zone-counter">
+                      {editZones.length} zone{editZones.length !== 1 ? 's' : ''}
+                      {editZones.filter(z => z.status === 'completed').length > 0 && 
+                        ` (${editZones.filter(z => z.status === 'completed').length} completed)`
+                      }
+                    </span>
                     <button onClick={clearAllZones} className="clear-zones-btn">
-                      🗑️ Clear
+                      🗑️ Clear All
                     </button>
                   </>
                 )}
@@ -130,43 +171,60 @@ const SpotEditor = ({ image, onSpotEdit, onApplyEdit, isLoading, className = '' 
             <div className="modal-content">
               <div className="editor-layout">
                 <div className="edit-panel">
-                  <p className="instructions">Click anywhere on the image to add edit zones</p>
+                  <div className="instructions-panel">
+                    <p className="instructions">Click anywhere on the image to add edit zones</p>
+                    <div className="keyboard-shortcuts">
+                      <small>
+                        <kbd>Esc</kbd> Close editor • 
+                        <kbd>Enter</kbd> Apply edit • 
+                        <kbd>Del</kbd> Remove zone
+                      </small>
+                    </div>
+                  </div>
                   <div className="image-container">
-                    <img
-                      ref={imageRef}
-                      src={image.url}
-                      alt="Room for spot editing"
-                      className="spot-image edit-mode"
-                      onClick={handleImageClick}
-                      onLoad={() => setImageLoaded(true)}
-                    />
+                    <div className="image-wrapper">
+                      <img
+                        ref={imageRef}
+                        src={image.url}
+                        alt="Room for spot editing"
+                        className={`spot-image ${isEditMode ? 'edit-mode' : ''}`}
+                        onClick={handleImageClick}
+                        onLoad={() => setImageLoaded(true)}
+                        onMouseEnter={() => setIsEditMode(true)}
+                        onMouseLeave={() => setIsEditMode(false)}
+                      />
+                      {isEditMode && (
+                        <div className="edit-overlay">
+                          <div className="crosshair-h"></div>
+                          <div className="crosshair-v"></div>
+                        </div>
+                      )}
+                    </div>
 
                     {imageLoaded && editZones.map((zone) => (
-                      <EditZone
-                        key={zone.id}
-                        zone={zone}
-                        isActive={activeZone === zone.id}
-                        onPromptSubmit={handlePromptSubmit}
-                        onRemove={removeZone}
-                        isLoading={isLoading && zone.status === 'processing'}
-                      />
+                      <div key={zone.id} className="zone-wrapper">
+                        <EditZone
+                          zone={zone}
+                          isActive={activeZone === zone.id}
+                          onPromptSubmit={handlePromptSubmit}
+                          onRemove={removeZone}
+                          isLoading={isLoading && zone.status === 'processing'}
+                        />
+                      </div>
                     ))}
                   </div>
                 </div>
                 
                 <div className="preview-panel">
-                  <h4>Preview</h4>
                   {previewImage ? (
                     <div className="preview-container">
                       <img src={previewImage} alt="Preview" className="preview-image" />
-                      <button onClick={applyChanges} className="apply-btn">
-                        ✨ Apply Changes
+                      <button onClick={applyChangesToMainImage} className="apply-main-btn">
+                        ✅ Apply to Main Image
                       </button>
                     </div>
                   ) : (
                     <div className="no-preview">
-                      <p>Make edits to see preview</p>
-                      <small>Preview state: {previewImage ? 'has image' : 'no image'}</small>
                     </div>
                   )}
                 </div>
@@ -205,11 +263,11 @@ const SpotEditor = ({ image, onSpotEdit, onApplyEdit, isLoading, className = '' 
         .spot-modal {
           background: white;
           border-radius: 1rem;
-          max-width: 95vw;
-          max-height: 90vh;
-          overflow: visible;
+          width: 90vw;
+          max-width: 1200px;
+          max-height: 85vh;
+          overflow: hidden;
           box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-          min-width: 800px;
         }
 
         .modal-header {
@@ -234,23 +292,30 @@ const SpotEditor = ({ image, onSpotEdit, onApplyEdit, isLoading, className = '' 
 
         .modal-content {
           padding: 1.5rem;
-          max-height: 70vh;
-          overflow: visible;
+          max-height: calc(85vh - 80px);
+          overflow: hidden;
+          position: relative;
         }
 
         .editor-layout {
           display: grid;
-          grid-template-columns: 1fr 300px;
+          grid-template-columns: 2fr 1fr;
           gap: 1.5rem;
+          height: 100%;
         }
 
         .edit-panel {
           min-width: 0;
+          display: flex;
+          flex-direction: column;
         }
 
         .preview-panel {
           border-left: 1px solid #e5e7eb;
           padding-left: 1.5rem;
+          display: flex;
+          flex-direction: column;
+          min-width: 250px;
         }
 
         .preview-panel h4 {
@@ -270,7 +335,7 @@ const SpotEditor = ({ image, onSpotEdit, onApplyEdit, isLoading, className = '' 
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
-        .apply-btn {
+        .apply-main-btn {
           background: #28a745;
           color: white;
           border: none;
@@ -280,9 +345,10 @@ const SpotEditor = ({ image, onSpotEdit, onApplyEdit, isLoading, className = '' 
           cursor: pointer;
           transition: all 0.2s ease;
           width: 100%;
+          font-size: 0.9rem;
         }
 
-        .apply-btn:hover {
+        .apply-main-btn:hover {
           background: #218838;
           transform: translateY(-1px);
         }
@@ -295,11 +361,29 @@ const SpotEditor = ({ image, onSpotEdit, onApplyEdit, isLoading, className = '' 
           border-radius: 0.5rem;
         }
 
-        .instructions {
+        .instructions-panel {
           text-align: center;
-          color: #6b7280;
           margin-bottom: 1rem;
+        }
+
+        .instructions {
+          color: #6b7280;
+          margin-bottom: 0.5rem;
           font-size: 0.9rem;
+        }
+
+        .keyboard-shortcuts {
+          color: #9ca3af;
+          font-size: 0.75rem;
+        }
+
+        .keyboard-shortcuts kbd {
+          background: #f3f4f6;
+          border: 1px solid #d1d5db;
+          border-radius: 0.25rem;
+          padding: 0.125rem 0.25rem;
+          font-size: 0.7rem;
+          font-family: monospace;
         }
 
         .close-btn {
@@ -319,7 +403,7 @@ const SpotEditor = ({ image, onSpotEdit, onApplyEdit, isLoading, className = '' 
         }
 
         .edit-mode-btn {
-          background: #007bff;
+          background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
           color: white;
           border: none;
           padding: 0.75rem 1.5rem;
@@ -328,12 +412,18 @@ const SpotEditor = ({ image, onSpotEdit, onApplyEdit, isLoading, className = '' 
           cursor: pointer;
           transition: all 0.3s ease;
           font-size: 1rem;
+          box-shadow: 0 2px 8px rgba(0, 123, 255, 0.2);
         }
 
         .edit-mode-btn:hover {
-          background: #0056b3;
+          background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
           transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+          box-shadow: 0 6px 16px rgba(0, 123, 255, 0.4);
+        }
+
+        .edit-mode-btn:active {
+          transform: translateY(0);
+          box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
         }
 
         .zone-controls {
@@ -368,13 +458,71 @@ const SpotEditor = ({ image, onSpotEdit, onApplyEdit, isLoading, className = '' 
           width: 100%;
           border-radius: 0.5rem;
           overflow: visible;
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1;
+        }
+
+        .image-wrapper {
+          position: relative;
+          display: inline-block;
+          width: 100%;
+        }
+
+        .zone-wrapper {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          pointer-events: none;
+        }
+
+        .zone-wrapper > * {
+          pointer-events: auto;
+        }
+
+        .edit-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          pointer-events: none;
+          opacity: 0.3;
+        }
+
+        .crosshair-h, .crosshair-v {
+          position: absolute;
+          background: #007bff;
+          pointer-events: none;
+        }
+
+        .crosshair-h {
+          top: 50%;
+          left: 0;
+          right: 0;
+          height: 1px;
+          transform: translateY(-50%);
+        }
+
+        .crosshair-v {
+          top: 0;
+          bottom: 0;
+          left: 50%;
+          width: 1px;
+          transform: translateX(-50%);
         }
 
         .spot-image {
-          width: 100%;
+          max-width: 100%;
+          max-height: 60vh;
           height: auto;
           display: block;
           transition: all 0.3s ease;
+          border-radius: 0.5rem;
         }
 
         .spot-image.edit-mode {
@@ -383,6 +531,29 @@ const SpotEditor = ({ image, onSpotEdit, onApplyEdit, isLoading, className = '' 
 
         .spot-image.edit-mode:hover {
           filter: brightness(1.05);
+        }
+
+        .click-ripple {
+          position: absolute;
+          width: 40px;
+          height: 40px;
+          border: 3px solid #007bff;
+          border-radius: 50%;
+          transform: translate(-50%, -50%);
+          animation: clickRipple 0.6s ease-out;
+          pointer-events: none;
+          z-index: 5;
+        }
+
+        @keyframes clickRipple {
+          0% {
+            transform: translate(-50%, -50%) scale(0.3);
+            opacity: 1;
+          }
+          100% {
+            transform: translate(-50%, -50%) scale(2);
+            opacity: 0;
+          }
         }
 
 
@@ -394,14 +565,45 @@ const SpotEditor = ({ image, onSpotEdit, onApplyEdit, isLoading, className = '' 
 const EditZone = ({ zone, isActive, onPromptSubmit, onRemove, isLoading }) => {
   const [prompt, setPrompt] = useState('')
   const [showChat, setShowChat] = useState(isActive)
+  const [showSuggestions, setShowSuggestions] = useState(false)
   const inputRef = useRef(null)
+
+  const promptSuggestions = [
+    'Change the wall color to sage green',
+    'Add a modern floor lamp here',
+    'Replace with a leather armchair',
+    'Add floating shelves on this wall',
+    'Change to hardwood flooring',
+    'Add a large window with natural light',
+    'Replace with a marble countertop',
+    'Add indoor plants in this corner'
+  ]
 
   useEffect(() => {
     setShowChat(isActive)
     if (isActive && inputRef.current) {
-      inputRef.current.focus()
+      setTimeout(() => inputRef.current.focus(), 100)
     }
   }, [isActive])
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (showChat) {
+        if (e.key === 'Escape') {
+          setShowChat(false)
+        } else if (e.key === 'Enter' && e.ctrlKey && prompt.trim()) {
+          handleSubmit(e)
+        } else if (e.key === 'Delete' && e.shiftKey) {
+          onRemove(zone.id)
+        }
+      }
+    }
+
+    if (showChat) {
+      document.addEventListener('keydown', handleKeyDown)
+      return () => document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [showChat, prompt, zone.id, onRemove])
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -436,7 +638,8 @@ const EditZone = ({ zone, isActive, onPromptSubmit, onRemove, isLoading }) => {
         style={{
           left: `${zone.x}%`,
           top: `${zone.y}%`,
-          borderColor: getStatusColor()
+          borderColor: getStatusColor(),
+          transform: 'translate(-50%, -50%)'
         }}
         onClick={(e) => {
           e.stopPropagation()
@@ -451,8 +654,10 @@ const EditZone = ({ zone, isActive, onPromptSubmit, onRemove, isLoading }) => {
         <div
           className="edit-zone-chat"
           style={{
-            left: `${Math.min(zone.x, 70)}%`,
-            top: `${Math.max(zone.y - 10, 5)}%`
+            position: 'fixed',
+            left: Math.min(Math.max(zone.x, 20), 80) + '%',
+            top: Math.min(Math.max(zone.y, 10), 70) + '%',
+            transform: 'translate(-50%, -50%)'
           }}
         >
           <div className="chat-header">
@@ -461,15 +666,55 @@ const EditZone = ({ zone, isActive, onPromptSubmit, onRemove, isLoading }) => {
           </div>
           
           <form onSubmit={handleSubmit} className="chat-form">
-            <input
-              ref={inputRef}
-              type="text"
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Describe changes for this area..."
-              className="prompt-input"
-              disabled={isLoading}
-            />
+            <div className="input-container">
+              <input
+                ref={inputRef}
+                type="text"
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                onFocus={() => setShowSuggestions(true)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    handleSubmit(e)
+                  }
+                }}
+                placeholder="Describe changes for this area... (Enter to apply)"
+                className="prompt-input"
+                disabled={isLoading}
+              />
+              <button
+                type="button"
+                onClick={() => setShowSuggestions(!showSuggestions)}
+                className="suggestions-btn"
+                title="Show suggestions"
+              >
+                💡
+              </button>
+            </div>
+            
+            {showSuggestions && (
+              <div className="suggestions-panel">
+                <div className="suggestions-header">Quick suggestions:</div>
+                <div className="suggestions-grid">
+                  {promptSuggestions.slice(0, 4).map((suggestion, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => {
+                        setPrompt(suggestion)
+                        setShowSuggestions(false)
+                        inputRef.current?.focus()
+                      }}
+                      className="suggestion-btn"
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            
             <div className="chat-actions">
               <button
                 type="submit"
@@ -503,7 +748,6 @@ const EditZone = ({ zone, isActive, onPromptSubmit, onRemove, isLoading }) => {
           height: 24px;
           border: 3px solid;
           border-radius: 50%;
-          transform: translate(-50%, -50%);
           cursor: pointer;
           z-index: 10;
           background: rgba(255, 255, 255, 0.9);
@@ -539,13 +783,12 @@ const EditZone = ({ zone, isActive, onPromptSubmit, onRemove, isLoading }) => {
         }
 
         .edit-zone-chat {
-          position: absolute;
           background: white;
           border-radius: 0.5rem;
           box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
           border: 1px solid #e5e7eb;
-          min-width: 280px;
-          z-index: 9999;
+          width: 280px;
+          z-index: 999999;
           animation: scaleIn 0.2s ease-out;
         }
 
@@ -585,13 +828,17 @@ const EditZone = ({ zone, isActive, onPromptSubmit, onRemove, isLoading }) => {
           padding: 1rem;
         }
 
+        .input-container {
+          position: relative;
+          margin-bottom: 0.75rem;
+        }
+
         .prompt-input {
           width: 100%;
-          padding: 0.75rem;
+          padding: 0.75rem 3rem 0.75rem 0.75rem;
           border: 2px solid #d1d5db;
           border-radius: 0.375rem;
           font-size: 0.9rem;
-          margin-bottom: 0.75rem;
           transition: border-color 0.2s;
         }
 
@@ -600,12 +847,75 @@ const EditZone = ({ zone, isActive, onPromptSubmit, onRemove, isLoading }) => {
           border-color: #007bff;
         }
 
+        .suggestions-btn {
+          position: absolute;
+          right: 0.5rem;
+          top: 50%;
+          transform: translateY(-50%);
+          background: none;
+          border: none;
+          font-size: 1rem;
+          cursor: pointer;
+          padding: 0.25rem;
+          border-radius: 0.25rem;
+          transition: background 0.2s;
+        }
+
+        .suggestions-btn:hover {
+          background: #f3f4f6;
+        }
+
+        .suggestions-panel {
+          background: #f8f9fa;
+          border: 1px solid #e5e7eb;
+          border-radius: 0.375rem;
+          padding: 0.75rem;
+          margin-bottom: 0.75rem;
+          animation: slideDown 0.2s ease-out;
+        }
+
+        @keyframes slideDown {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        .suggestions-header {
+          font-size: 0.8rem;
+          color: #6b7280;
+          margin-bottom: 0.5rem;
+          font-weight: 600;
+        }
+
+        .suggestions-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 0.5rem;
+        }
+
+        .suggestion-btn {
+          background: white;
+          border: 1px solid #d1d5db;
+          border-radius: 0.25rem;
+          padding: 0.5rem;
+          font-size: 0.75rem;
+          text-align: left;
+          cursor: pointer;
+          transition: all 0.2s;
+          line-height: 1.2;
+        }
+
+        .suggestion-btn:hover {
+          background: #007bff;
+          color: white;
+          border-color: #007bff;
+        }
+
         .chat-actions {
           display: flex;
           gap: 0.5rem;
         }
 
-        .apply-btn {
+        .chat-actions .apply-btn {
           background: #007bff;
           color: white;
           border: none;
@@ -618,12 +928,12 @@ const EditZone = ({ zone, isActive, onPromptSubmit, onRemove, isLoading }) => {
           transition: all 0.2s ease;
         }
 
-        .apply-btn:hover:not(:disabled) {
+        .chat-actions .apply-btn:hover:not(:disabled) {
           background: #0056b3;
           transform: translateY(-1px);
         }
 
-        .apply-btn:disabled {
+        .chat-actions .apply-btn:disabled {
           opacity: 0.6;
           cursor: not-allowed;
         }
@@ -649,6 +959,34 @@ const EditZone = ({ zone, isActive, onPromptSubmit, onRemove, isLoading }) => {
           border-top: 1px solid #e5e7eb;
           font-size: 0.8rem;
           color: #6b7280;
+        }
+
+        @media (max-width: 768px) {
+          .spot-modal {
+            width: 95vw;
+            max-height: 90vh;
+          }
+          
+          .editor-layout {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+          }
+          
+          .preview-panel {
+            border-left: none;
+            border-top: 1px solid #e5e7eb;
+            padding-left: 0;
+            padding-top: 1rem;
+          }
+          
+          .spot-image {
+            max-height: 40vh;
+          }
+          
+          .edit-zone-chat {
+            width: 280px;
+            left: 10px !important;
+          }
         }
       `}</style>
     </>

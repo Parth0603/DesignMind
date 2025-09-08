@@ -4,16 +4,36 @@ const STORAGE_KEY = 'homecanvas_state'
 export const saveImageState = (state) => {
   try {
     if (!state) return
+    
+    // Limit history to prevent quota exceeded
+    const limitedHistory = (state.imageHistory || []).slice(-50)
+    const limitedEdits = (state.editHistory || []).slice(-100)
+    
     const stateToSave = {
       originalImage: state.originalImage || null,
       currentImage: state.currentImage || null,
-      imageHistory: state.imageHistory || [],
-      editHistory: state.editHistory || [],
+      imageHistory: limitedHistory,
+      editHistory: limitedEdits,
       timestamp: Date.now()
     }
+    
+    const stateString = JSON.stringify(stateToSave)
+    // Check if data is too large (10MB limit)
+    if (stateString.length > 10000000) {
+      console.warn('State too large, clearing history')
+      stateToSave.imageHistory = []
+      stateToSave.editHistory = []
+    }
+    
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave))
   } catch (error) {
     console.warn('Failed to save state:', error)
+    // Clear storage if quota exceeded
+    if (error.name === 'QuotaExceededError') {
+      try {
+        localStorage.removeItem(STORAGE_KEY)
+      } catch (e) {}
+    }
   }
 }
 

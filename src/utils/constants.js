@@ -12,6 +12,7 @@ export const EXAMPLE_PROMPTS = [
 
 // API configuration
 export const API_CONFIG = {
+  BACKEND_URL: 'http://localhost:5000',
   GEMINI_ENDPOINT: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent',
   MAX_RETRIES: 3,
   TIMEOUT: 30000

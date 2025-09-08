@@ -2,7 +2,7 @@ import { useState } from 'react'
 import PropTypes from 'prop-types'
 import { analyzeMood, MOOD_OPTIONS } from '../services/moodAnalysis'
 
-const MoodAnalyzer = ({ roomImage, onMoodAnalysis, className = '' }) => {
+const MoodAnalyzer = ({ roomImage, onMoodAnalysis, disabled = false, className = '' }) => {
   const [selectedMood, setSelectedMood] = useState('')
   const [analysis, setAnalysis] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -49,7 +49,7 @@ const MoodAnalyzer = ({ roomImage, onMoodAnalysis, className = '' }) => {
               key={mood.value}
               className={`mood-option ${selectedMood === mood.value ? 'selected' : ''}`}
               onClick={() => setSelectedMood(mood.value)}
-              disabled={isLoading}
+              disabled={isLoading || disabled}
             >
               <div className="mood-label">{mood.label}</div>
               <div className="mood-description">{mood.description}</div>
@@ -60,13 +60,13 @@ const MoodAnalyzer = ({ roomImage, onMoodAnalysis, className = '' }) => {
 
       <button
         onClick={handleAnalyzeMood}
-        disabled={!selectedMood || !roomImage || isLoading}
+        disabled={!selectedMood || !roomImage || isLoading || disabled}
         className="btn btn-primary analyze-btn"
       >
         {isLoading ? (
           <>
             <div className="spinner"></div>
-            Analyzing Mood...
+            Changing Mood...
           </>
         ) : (
           '🔍 Analyze Room Mood'
@@ -241,6 +241,7 @@ const MoodAnalyzer = ({ roomImage, onMoodAnalysis, className = '' }) => {
 MoodAnalyzer.propTypes = {
   roomImage: PropTypes.string,
   onMoodAnalysis: PropTypes.func,
+  disabled: PropTypes.bool,
   className: PropTypes.string
 }
 

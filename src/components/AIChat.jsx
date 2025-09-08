@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { aiDesignerChat } from '../services/aiChat'
 
-const AIChat = ({ roomImage, className = '' }) => {
+const AIChat = ({ roomImage, disabled = false, className = '' }) => {
   const [messages, setMessages] = useState([
     { id: 1, type: 'ai', text: 'Hi! I\'m your AI Interior Designer. Ask me about colors, furniture, layouts, or any design question!' }
   ])
@@ -149,11 +149,11 @@ const AIChat = ({ roomImage, className = '' }) => {
           onChange={(e) => setInputMessage(e.target.value)}
           onKeyPress={handleKeyPress}
           placeholder="Ask about colors, furniture, layouts..."
-          disabled={isLoading}
+          disabled={isLoading || disabled}
         />
         <button
           onClick={handleSendMessage}
-          disabled={!inputMessage.trim() || isLoading}
+          disabled={!inputMessage.trim() || isLoading || disabled}
         >
           {isLoading ? '⏳' : '➤'}
         </button>
@@ -381,6 +381,7 @@ const AIChat = ({ roomImage, className = '' }) => {
 
 AIChat.propTypes = {
   roomImage: PropTypes.string,
+  disabled: PropTypes.bool,
   className: PropTypes.string
 }
 

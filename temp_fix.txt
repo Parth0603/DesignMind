@@ -1,0 +1,4 @@
+Replace these emojis in Home.jsx:
+👩💼 → SM
+👨🏠 → MR  
+👩🎓 → EL

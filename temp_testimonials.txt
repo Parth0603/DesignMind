@@ -1,0 +1,36 @@
+              <div className="testimonial">
+                <div className="testimonial-content">
+                  <p>"DesignMind helped me visualize my dream living room. The AI suggestions were spot-on!"</p>
+                  <div className="testimonial-author">
+                    <div className="author-avatar">S</div>
+                    <div>
+                      <span className="author-name">Sarah M.</span>
+                      <span className="author-role">Interior Design Enthusiast</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="testimonial">
+                <div className="testimonial-content">
+                  <p>"I redesigned my entire apartment using this tool. Amazing results in minutes!"</p>
+                  <div className="testimonial-author">
+                    <div className="author-avatar">M</div>
+                    <div>
+                      <span className="author-name">Mike R.</span>
+                      <span className="author-role">Homeowner</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="testimonial">
+                <div className="testimonial-content">
+                  <p>"The mood analysis feature is incredible. It perfectly captured the vibe I wanted."</p>
+                  <div className="testimonial-author">
+                    <div className="author-avatar">E</div>
+                    <div>
+                      <span className="author-name">Emma L.</span>
+                      <span className="author-role">Design Student</span>
+                    </div>
+                  </div>
+                </div>
+              </div>

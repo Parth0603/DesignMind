@@ -7,7 +7,7 @@ import PromptInput from '../components/PromptInput'
 import ImageUpload from '../components/ImageUpload'
 import AIChat from '../components/AIChat'
 import MoodAnalyzer from '../components/MoodAnalyzer'
-import SpotEditor from '../components/SpotEditor'
+import SimpleSpotEditor from '../components/SimpleSpotEditor'
 
 const Editor = () => {
   const {
@@ -48,17 +48,7 @@ const Editor = () => {
 
   return (
     <div className="editor-page">
-      <header className="header">
-        <div className="container">
-          <Link to="/" className="logo">
-            <h1>🧠 DesignMind</h1>
-          </Link>
-          
-          <nav className="nav">
-            <Link to="/" className="nav-link">← Back to Home</Link>
-          </nav>
-        </div>
-      </header>
+
 
       <main className="main">
         <div className="container">
@@ -134,13 +124,13 @@ const Editor = () => {
                 {[
                   { id: 'generate', icon: '🎨', label: 'Generate' },
                   { id: 'chat', icon: '🤖', label: 'AI Chat' },
-                  { id: 'mood', icon: '🎭', label: 'Mood' },
-                  { id: 'spot', icon: '🎯', label: 'Spot Edit' }
+                  { id: 'mood', icon: '🎭', label: 'Mood' }
                 ].map((tab) => (
                   <button
                     key={tab.id}
                     className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
                     onClick={() => setActiveTab(tab.id)}
+                    disabled={isLoading}
                   >
                     <span className="tab-icon">{tab.icon}</span>
                     <span className="tab-label">{tab.label}</span>
@@ -192,12 +182,13 @@ const Editor = () => {
                     )}
                     
                     {activeTab === 'chat' && (
-                      <AIChat roomImage={currentImage?.base64} />
+                      <AIChat roomImage={currentImage?.base64} disabled={isLoading} />
                     )}
                     
                     {activeTab === 'mood' && (
                       <MoodAnalyzer 
                         roomImage={currentImage?.base64}
+                        disabled={isLoading}
                         onMoodAnalysis={(analysis) => {
                           if (analysis.suggestions) {
                             handleGenerate(analysis.suggestions)
@@ -206,13 +197,7 @@ const Editor = () => {
                       />
                     )}
                     
-                    {activeTab === 'spot' && (
-                      <div className="coming-soon">
-                        <div className="coming-soon-icon">🚧</div>
-                        <h3>Coming Soon</h3>
-                        <p>Spot Edit Mode is under development</p>
-                      </div>
-                    )}
+
                   </div>
                 )}
               </div>
@@ -229,38 +214,7 @@ const Editor = () => {
           background: var(--neutral-100);
         }
 
-        .header {
-          background: white;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-          padding: 1rem 0;
-        }
 
-        .header .container {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        .logo {
-          text-decoration: none;
-        }
-
-        .logo h1 {
-          color: var(--primary);
-          font-size: 1.5rem;
-          font-weight: 700;
-        }
-
-        .nav-link {
-          color: var(--neutral-600);
-          text-decoration: none;
-          font-weight: 500;
-          transition: color 0.2s ease;
-        }
-
-        .nav-link:hover {
-          color: var(--primary);
-        }
 
         .main {
           padding: 2rem 0;
@@ -308,7 +262,7 @@ const Editor = () => {
 
         .feature-tabs {
           display: grid;
-          grid-template-columns: repeat(4, 1fr);
+          grid-template-columns: repeat(3, 1fr);
           gap: 0.75rem;
           margin-bottom: 1.5rem;
           background: #f8f9fa;
@@ -331,10 +285,15 @@ const Editor = () => {
           min-height: 80px;
         }
 
-        .tab-btn:hover {
+        .tab-btn:hover:not(:disabled) {
           background: white;
           transform: translateY(-2px);
           box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
         }
 
         .tab-btn.active {
@@ -528,7 +487,7 @@ const Editor = () => {
           }
           
           .feature-tabs {
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 0.5rem;
             padding: 0.5rem;
           }

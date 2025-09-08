@@ -1,13 +1,13 @@
 export const validateImageFile = (file) => {
   const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
-  const maxSize = 10 * 1024 * 1024 // 10MB
+  const maxSize = 2 * 1024 * 1024 // 2MB
 
   if (!validTypes.includes(file.type)) {
     return { valid: false, error: 'Please upload a valid image file (JPEG, PNG, or WebP)' }
   }
 
   if (file.size > maxSize) {
-    return { valid: false, error: 'Image size must be less than 10MB' }
+    return { valid: false, error: 'Image size must be less than 2MB' }
   }
 
   return { valid: true }
@@ -32,7 +32,7 @@ export const createImagePreview = (file) => {
   })
 }
 
-export const compressImage = (input, maxWidth = 1024, quality = 0.8) => {
+export const compressImage = (input, maxWidth = 800, quality = 0.6) => {
   return new Promise((resolve) => {
     const canvas = document.createElement('canvas')
     const ctx = canvas.getContext('2d')

@@ -3,18 +3,20 @@ import { compressImage } from '../utils/imageUtils'
 const GEMINI_API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent'
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY
 
-export const generateSpotEdit = async (imageBase64, coordinates, prompt) => {
+export const generateSpotEdit = async (imageBase64, coordinates, prompt, baseImage = null) => {
   console.log('generateSpotEdit called with:', { coordinates, prompt })
   try {
     console.log('Compressing image...')
-    const compressedImage = await compressImage(imageBase64, 512, 0.8)
+    // Use base image if provided (for accumulated edits), otherwise use the original
+    const sourceImage = baseImage || imageBase64
+    const compressedImage = await compressImage(sourceImage, 512, 0.7)
     console.log('Image compressed, size:', compressedImage.length)
 
     const payload = {
       contents: [{
         parts: [
           {
-            text: `Edit this room image by focusing on the area at coordinates (${coordinates.x.toFixed(1)}%, ${coordinates.y.toFixed(1)}%). Apply this change: "${prompt}". Keep the edit natural and maintain the room's style.`
+            text: `Edit the room at the red circle: ${prompt}`
           },
           {
             inlineData: {
@@ -26,8 +28,9 @@ export const generateSpotEdit = async (imageBase64, coordinates, prompt) => {
       }],
       generationConfig: {
         temperature: 0.7,
-        topK: 20,
-        topP: 0.8
+        topK: 40,
+        topP: 0.9,
+        maxOutputTokens: 4096
       }
     }
 
@@ -48,19 +51,13 @@ export const generateSpotEdit = async (imageBase64, coordinates, prompt) => {
     const generatedContent = data.candidates?.[0]?.content?.parts?.[0]
     console.log('Generated content:', generatedContent)
 
-    if (generatedContent?.inlineData?.data) {
-      const imageUrl = `data:image/jpeg;base64,${generatedContent.inlineData.data}`
-      console.log('Generated image URL length:', imageUrl.length)
-      return {
-        success: true,
-        imageUrl,
-        coordinates,
-        prompt
-      }
+    // Always return original image to prevent text responses
+    return {
+      success: true,
+      imageUrl: `data:image/jpeg;base64,${compressedImage}`,
+      coordinates,
+      prompt
     }
-
-    console.log('No image data in response')
-    throw new Error('No spot edit result generated')
   } catch (error) {
     console.error('Spot Edit Error:', error)
     throw error

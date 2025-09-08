@@ -108,7 +108,16 @@ const ImageDisplay = ({ image, originalImage, isLoading, loadingMessage, classNa
       {image && image.isGenerated && image.prompt && (
         <div className="image-caption">
           <div className="caption-card">
-            <div className="caption-text">✨ {image.prompt.split(' ').slice(0, 4).join(' ')}</div>
+            <div className="caption-header">
+              <span className="caption-icon">🎨</span>
+              <span className="caption-title">Generated Design</span>
+            </div>
+            <div className="caption-text">
+              {image.prompt.length > 80 
+                ? `${image.prompt.substring(0, 80)}...` 
+                : image.prompt
+              }
+            </div>
           </div>
         </div>
       )}
@@ -217,15 +226,49 @@ const ImageDisplay = ({ image, originalImage, isLoading, loadingMessage, classNa
         }
 
         .caption-card {
-          background: rgba(255, 255, 255, 0.9);
-          border-radius: 0.5rem;
-          padding: 0.75rem 1rem;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-          text-align: center;
+          background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+          border: 1px solid #e2e8f0;
+          border-radius: 0.75rem;
+          padding: 1rem;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+          text-align: left;
+        }
+
+        .caption-header {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          margin-bottom: 0.5rem;
+        }
+
+        .caption-icon {
+          font-size: 1.1rem;
+        }
+
+        .caption-title {
+          font-size: 0.8rem;
+          font-weight: 600;
+          color: #374151;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
         }
 
         .caption-text {
-          font-size: 0.85rem;
+          font-size: 0.9rem;
+          color: #4b5563;
+          line-height: 1.4;
+          margin-bottom: 0.5rem;
+          font-style: italic;
+        }
+
+        .caption-meta {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .generation-time {
+          font-size: 0.75rem;
           color: #6b7280;
           font-weight: 500;
         }
