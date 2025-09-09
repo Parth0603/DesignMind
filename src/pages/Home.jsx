@@ -115,7 +115,7 @@ const Home = () => {
                 <div className="transformation-showcase">
                   <div className="image-frame before-frame">
                     <div className="frame-glow"></div>
-                    <img src="src/assets/before.jpeg" alt="Before - Empty Room" />
+                    <img src="/before.jpeg" alt="Before - Empty Room" />
                     <div className="image-label">Before</div>
                     <div className="magic-sparkles">
                       <div className="sparkle sparkle-1">✨</div>
@@ -124,7 +124,7 @@ const Home = () => {
                     </div>
                   </div>
                   <div className="image-popup before-popup">
-                    <img src="src/assets/before.jpeg" alt="Before - Empty Room" />
+                    <img src="/before.jpeg" alt="Before - Empty Room" />
                   </div>
                   
                   <div className="transformation-arrow">
@@ -135,12 +135,12 @@ const Home = () => {
                   
                   <div className="image-frame after-frame">
                     <div className="frame-glow success-glow"></div>
-                    <img src="src/assets/after.jpg" alt="After - Designed Room" />
+                    <img src="/after.jpg" alt="After - Designed Room" />
                     <div className="image-label success">After</div>
                     <div className="success-indicator">✓</div>
                   </div>
                   <div className="image-popup after-popup">
-                    <img src="src/assets/after.jpg" alt="After - Designed Room" />
+                    <img src="/after.jpg" alt="After - Designed Room" />
                   </div>
                 </div>
                 <p className="demo-text">"Add modern furniture and warm lighting to create a cozy living space"</p>
